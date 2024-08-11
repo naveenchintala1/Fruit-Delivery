@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Surface
@@ -31,11 +32,12 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.rememberAsyncImagePainter
 import com.project.fruitdelivery.R
 
 @Composable
-fun FoodItem(food: FoodModel) {
+fun FoodItem(food: FoodModel,  cartViewModel: CartViewModel) {
     var quantity by remember { mutableStateOf(food.quantity) }
 
     Surface(
@@ -103,11 +105,15 @@ fun FoodItem(food: FoodModel) {
                     )
 
                     IconButton(
-                        onClick = { quantity++ },
+                        onClick = {
+                            quantity++
+                            cartViewModel.addItemToCart(food.copy(quantity = quantity))
+                             },
                         modifier = Modifier.size(36.dp)
                     ) {
                         Icon(Icons.Default.Add, contentDescription = "Add")
                     }
+
                 }
             }
         }

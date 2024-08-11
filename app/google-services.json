@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "658347370241",
+    "project_id": "fruit-delivery-b8247",
+    "storage_bucket": "fruit-delivery-b8247.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:658347370241:android:56b1c6a278690465979d00",
+        "android_client_info": {
+          "package_name": "com.project.fruitdelivery"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyALZUJxQrRrMZr01NMb-Xd-Lw4HfSeQL8I"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -1,5 +1,6 @@
 package com.project.fruitdelivery
 
+
 data class FoodModel(
     val id: String = "",
     val name: String = "",

@@ -2,6 +2,7 @@ package com.project.fruitdelivery.auth
 
 
 import android.annotation.SuppressLint
+import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -22,6 +23,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -29,6 +31,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -46,34 +49,91 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.database.FirebaseDatabase
+import com.project.fruitdelivery.MainActivity
 import com.project.fruitdelivery.R
+import com.project.fruitdelivery.UserProfileModel
 import com.project.fruitdelivery.ui.theme.FoodDeliveryTheme
+import kotlinx.coroutines.launch
 
 class RegisterA : ComponentActivity() {
+    private lateinit var auth: FirebaseAuth
+    private lateinit var database: FirebaseDatabase
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        auth = FirebaseAuth.getInstance()
+        database = FirebaseDatabase.getInstance()
         setContent {
             FoodDeliveryTheme {
-                RegisterScreen()
+                RegisterScreen(auth,database)
             }
         }
 
     }
 
+    fun moveToLogin(){
+        val intent = Intent(this, LoginA::class.java)
+        startActivity(intent)
+    }
+
     @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
     @Composable
-    fun RegisterScreen() {
+    fun RegisterScreen(auth: FirebaseAuth, database: FirebaseDatabase) {
         var name by remember { mutableStateOf("") }
         var age by remember { mutableStateOf("") }
         var mobileNumber by remember { mutableStateOf("") }
         var email by remember { mutableStateOf("") }
         var password by remember { mutableStateOf("") }
         var confirmPassword by remember { mutableStateOf("") }
-        var selectedGender by remember { mutableStateOf("") }
+        var errorMessage by remember { mutableStateOf("") }
+        var loading by remember { mutableStateOf(false) }
+        val scope = rememberCoroutineScope()
 
-        // List of genders
-        val genders = listOf("Male", "Female", "Other")
-        var genderDropdownExpanded by remember { mutableStateOf(false) }
+        fun validateInputs(): Boolean {
+            if (name.isBlank() || age.isBlank() || mobileNumber.isBlank() || email.isBlank() || password.isBlank() || confirmPassword.isBlank()) {
+                errorMessage = "All fields must be filled out"
+                return false
+            }
+            if (password != confirmPassword) {
+                errorMessage = "Passwords do not match"
+                return false
+            }
+            return true
+        }
+
+        fun registerUser() {
+            if (validateInputs()) {   loading = true
+                auth.createUserWithEmailAndPassword(email, password)
+                    .addOnCompleteListener { task ->
+                        if (task.isSuccessful) {
+                            val user = auth.currentUser
+                            user?.let {
+                                val userProfile = UserProfileModel(
+                                    name = name,
+                                    email = email,
+                                    password = password,
+                                    mobileNumber = mobileNumber,
+                                    age = age.toIntOrNull() ?: 0
+                                )
+                                database.reference.child("users").child(user.uid).setValue(userProfile)
+                                    .addOnCompleteListener { dbTask ->
+                                        loading = false
+                                        if (dbTask.isSuccessful) {
+                                            errorMessage = "Registration successful"
+                                            moveToLogin()
+                                        } else {
+                                            errorMessage = "Data save failed: ${dbTask.exception?.message}"
+                                        }
+                                    }
+                            }
+                        } else { loading = false
+                            errorMessage = task.exception?.message ?: "Registration failed"
+                        }
+                    }
+            }
+        }
         val focusRequester = remember { FocusRequester() }
         val gradientColor = listOf(Color(0xFF8BC34A), Color(0xFF4CAF50))
 
@@ -122,6 +182,7 @@ class RegisterA : ComponentActivity() {
                             value = age,
                             onValueChange = { age = it },
                             label = { Text("Age") },
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .padding(vertical = 8.dp)
@@ -171,37 +232,62 @@ class RegisterA : ComponentActivity() {
                         )
                         Spacer(modifier = Modifier.height(15.dp))
 
-                        Button(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(start = 32.dp, end = 32.dp),
-                            onClick = {
+                        if (errorMessage.isNotEmpty()) {
+                            Text(
+                                text = errorMessage,
+                                color = Color.Red,
+                                fontSize = 16.sp,
+                                modifier = Modifier.padding(16.dp)
+                            )
+                        }
 
-                            },
-                            contentPadding = PaddingValues(),
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = Color.Transparent
-                            ),
-                            shape = RoundedCornerShape(16.dp)
-                        ) {
+                        if (loading) {
                             Box(
                                 modifier = Modifier
-                                    .fillMaxWidth()
-                                    .background(
-                                        brush = Brush.horizontalGradient(colors = gradientColor),
-                                        shape = RoundedCornerShape(10.dp, 10.dp, 10.dp, 10.dp)
-                                    )
-                                    .clip(RoundedCornerShape(10.dp, 10.dp, 10.dp, 10.dp))
-                                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                                    .fillMaxSize()
+                                    .background(Color.White.copy(alpha = 0.5f), shape = RoundedCornerShape(8.dp)),
                                 contentAlignment = Alignment.Center
                             ) {
-                                Text(
-                                    text = "Register",
-                                    fontSize = 20.sp,
-                                    color = Color(0xFFFFFFFF)
-                                )
+                                CircularProgressIndicator()
                             }
+                        } else {
+                            Button(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(start = 32.dp, end = 32.dp),
+                                onClick = {
+                                    scope.launch {
+                                        registerUser()
+                                    }
+                                },
+                                contentPadding = PaddingValues(),
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = Color.Transparent
+                                ),
+                                shape = RoundedCornerShape(16.dp)
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .background(
+                                            brush = Brush.horizontalGradient(colors = gradientColor),
+                                            shape = RoundedCornerShape(10.dp, 10.dp, 10.dp, 10.dp)
+                                        )
+                                        .clip(RoundedCornerShape(10.dp, 10.dp, 10.dp, 10.dp))
+                                        .padding(horizontal = 16.dp, vertical = 8.dp),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Text(
+                                        text = "Register",
+                                        fontSize = 20.sp,
+                                        color = Color(0xFFFFFFFF)
+                                    )
+                                }
+                            }
+
                         }
+
+
                     }
 
                 }
@@ -213,7 +299,7 @@ class RegisterA : ComponentActivity() {
     @Preview
     @Composable
     fun PreviewRegisterScreen() {
-        RegisterScreen()
+        RegisterScreen(FirebaseAuth.getInstance(),FirebaseDatabase.getInstance())
     }
 
 }

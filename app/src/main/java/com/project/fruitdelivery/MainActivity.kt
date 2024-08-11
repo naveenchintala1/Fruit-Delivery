@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.BottomAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -36,6 +37,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
@@ -117,8 +119,26 @@ fun MainScreen() {
 
                 IconButton(
                     onClick = {
+                        selected.value = Icons.Default.Info
+                        navController.navigate(FragmentScreens.AboutUs.screens) {
+                            popUpTo(navController.graph.startDestinationId)
+                            launchSingleTop = true
+                        }
+                    },
+                    modifier = Modifier.weight(1f),
+                ) {
+                    Icon(
+                        Icons.Default.Info,
+                        contentDescription = null,
+                        modifier = Modifier.size(26.dp),
+                        tint = if (selected.value == Icons.Default.Info) Color.Green else Color.LightGray,
+                    )
+                }
+
+                IconButton(
+                    onClick = {
                         selected.value = Icons.Default.Person
-                        navController.navigate(FragmentScreens.Contact.screens) {
+                        navController.navigate(FragmentScreens.MyProfile.screens) {
                             popUpTo(navController.graph.startDestinationId)
                             launchSingleTop = true
                         }
@@ -143,8 +163,8 @@ fun MainScreen() {
         ) {
             composable(FragmentScreens.Home.screens){ HomeController() }
             composable(FragmentScreens.Bookings.screens){ Bookings() }
-            composable(FragmentScreens.Contact.screens){ ContactUs() }
-
+            composable(FragmentScreens.AboutUs.screens){ AboutUsScreen() }
+            composable(FragmentScreens.MyProfile.screens){ MyProfile() }
         }
 
     }
