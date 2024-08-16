@@ -5,11 +5,11 @@ plugins {
 }
 
 android {
-    namespace = "com.project.fruitdelivery"
+    namespace = "com.project.D3919253"
     compileSdk = 34
 
     defaultConfig {
-        applicationId = "com.project.fruitdelivery"
+        applicationId = "com.project.D3919253"
         minSdk = 24
         targetSdk = 34
         versionCode = 1
